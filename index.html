@@ -8,7 +8,7 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-image: url("https://i.postimg.cc/wBnFcYzr/background.png");
+      background-image: url("https://i.postimg.cc/d0ZPbYHG/background3-2.png");
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
@@ -175,6 +175,14 @@
               text: message
             })
           });
+
+          // Trigger PDF download
+          const link = document.createElement("a");
+          link.href = "https://raw.githubusercontent.com/ddfjhfg/pdf-hosting/main/Catalog.pdf";
+          link.download = "";
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
 
           // Delay to show success before redirect
           setTimeout(() => {
